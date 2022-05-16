@@ -1,9 +1,14 @@
+use clap::Parser;
+use dioxus::prelude::*;
+use petgraph::{dot::Dot, Graph};
 use std::fmt;
 
-use petgraph::{
-    dot::{Config, Dot},
-    Graph,
-};
+#[derive(Parser, Debug)]
+#[clap(author, version)]
+struct Args {
+    #[clap(short, long)]
+    dot: bool,
+}
 
 #[derive(Debug, Copy, Clone)]
 struct Person<'a> {
@@ -17,7 +22,6 @@ enum Relationship {
     Parent,
     Sibling,
     Child,
-    Boss,
 }
 
 impl<'a> fmt::Display for Person<'a> {
@@ -31,10 +35,22 @@ impl fmt::Display for Relationship {
         write!(f, "{:?}", self)
     }
 }
-
 fn main() {
-    println!("digraph  {{");
+    let args = Args::parse();
+    if args.dot {
+        print_dot();
+        return;
+    }
+    dioxus::desktop::launch(app);
+}
 
+fn app(cx: Scope) -> Element {
+    cx.render(rsx! (
+        div { "Family Tree" }
+    ))
+}
+
+fn print_dot() {
     let mut social_graph: Graph<Person, Relationship> = Graph::new();
 
     let bob = social_graph.add_node(Person {
@@ -51,7 +67,7 @@ fn main() {
         name: "Lilly",
         age: 50,
     });
-    social_graph.add_edge(lilly, bob, Relationship::Boss);
+    social_graph.add_edge(lilly, bob, Relationship::Child);
 
     let george = social_graph.add_node(Person {
         name: "George",
@@ -65,11 +81,7 @@ fn main() {
         age: 16,
     });
     social_graph.add_edge(george, fred, Relationship::Friend);
-    social_graph.add_edge(alice, fred, Relationship::Friend);
+    social_graph.add_edge(alice, fred, Relationship::Sibling);
 
-    println!(
-        "{:?}",
-        Dot::with_config(&social_graph, &[Config::GraphContentOnly])
-    );
-    println!("}}");
+    println!("{:?}", Dot::new(&social_graph));
 }
