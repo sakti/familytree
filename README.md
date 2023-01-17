@@ -1,8 +1,6 @@
 # familytree
 
 
-## Setup
-
 ```
-$ cargo install trunk
+$ cargo run
 ```
