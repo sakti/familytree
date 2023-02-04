@@ -1,5 +1,6 @@
-use clap::Parser;
+use anyhow::Result;
 use axum::{response::Html, routing::get, Router};
+use clap::Parser;
 use dioxus::prelude::*;
 
 mod sample;
@@ -12,13 +13,13 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     // print dot if flag set
     if args.dot {
         sample::print_dot();
-        return;
+        return Ok(());
     }
 
     let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -30,10 +31,10 @@ async fn main() {
                 .route("/", get(app_endpoint))
                 .into_make_service(),
         )
-        .await
-        .unwrap();
-}
+        .await?;
 
+    Ok(())
+}
 
 async fn app_endpoint() -> Html<String> {
     // render the rsx! macro to HTML
