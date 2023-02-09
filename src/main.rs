@@ -12,6 +12,8 @@ use tokio::signal;
 
 mod sample;
 
+const DB_PATH: &str = "file://tmp.db";
+
 #[derive(Parser, Debug)]
 #[clap(author, version)]
 struct Args {
@@ -36,7 +38,7 @@ async fn main() -> Result<()> {
     }
 
     // setup db
-    let ds = Datastore::new("memory").await?;
+    let ds = Datastore::new(DB_PATH).await?;
     let session = Session::for_db("ns", "family_tree");
 
     let sql = "CREATE person SET name='Jon Snow', alive=true";
