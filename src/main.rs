@@ -13,7 +13,7 @@ use tokio::signal;
 
 mod sample;
 
-const DB_PATH: &str = "file://tmp.db";
+const DB_PATH: &str = "family.db";
 
 #[derive(Parser, Debug)]
 #[clap(author, version)]

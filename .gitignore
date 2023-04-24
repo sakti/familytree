@@ -1,4 +1,4 @@
 /target
 *.dot
 *.png
-tmp.db
+family.db
