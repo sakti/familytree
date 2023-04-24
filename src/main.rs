@@ -1,13 +1,14 @@
+#![allow(non_snake_case)]
 use std::sync::Arc;
 
 use anyhow::Result;
 use axum::{extract::State, response::Html, routing::get, Router};
 use clap::Parser;
 use dioxus::prelude::*;
-use surrealdb::{
-    sql::{Object, Value},
-    Datastore, Response, Session,
-};
+use serde::{Deserialize, Serialize};
+use surrealdb::engine::local::{Db, RocksDb};
+use surrealdb::Surreal;
+
 use tokio::signal;
 
 mod sample;
@@ -23,8 +24,13 @@ struct Args {
 
 #[derive(Clone)]
 struct AppState {
-    db: Arc<Datastore>,
-    session: Session,
+    db: Arc<Surreal<Db>>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Person {
+    name: String,
+    alive: bool,
 }
 
 #[tokio::main]
@@ -38,17 +44,14 @@ async fn main() -> Result<()> {
     }
 
     // setup db
-    let ds = Datastore::new(DB_PATH).await?;
-    let session = Session::for_db("ns", "family_tree");
+    let db = Surreal::new::<RocksDb>(DB_PATH).await?;
+    db.use_ns("test").use_db("familytree").await?;
 
     let sql = "CREATE person SET name='Jon Snow', alive=true";
-    let res = ds.execute(sql, &session, None, false).await?;
+    let res = db.query(sql).await?;
     println!("{res:?}");
 
-    let state = AppState {
-        db: Arc::new(ds),
-        session: session.clone(),
-    };
+    let state = AppState { db: Arc::new(db) };
 
     let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on http://{addr}");
@@ -60,6 +63,7 @@ async fn main() -> Result<()> {
                 .route("/test", get(|| async { "hallo dunia" }))
                 .route("/test2", get(|| async { "hello world 2" }))
                 .route("/people", get(list_people))
+                .route("/debug", get(debug))
                 .with_state(state)
                 .into_make_service(),
         )
@@ -69,28 +73,27 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn into_iter_objects(res: Vec<Response>) -> Result<impl Iterator<Item = Result<Object>>> {
-    let result = res.into_iter().next().map(|it| it.result).transpose()?;
-    match result {
-        Some(Value::Array(arr)) => {
-            let it = arr.into_iter().map(|v| match v {
-                Value::Object(obj) => Ok(obj),
-                _ => Err(anyhow::anyhow!("expected object")),
-            });
-            Ok(it)
-        }
-        _ => Err(anyhow::anyhow!("no record found")),
-    }
+pub fn About(cx: Scope) -> Element {
+    cx.render(rsx!(p {
+        b {"Dioxus Labs"}
+        " An Open Source project dedicated to making Rust UI wonderful."
+    }))
+}
+
+async fn debug() -> Html<String> {
+    Html(dioxus_ssr::render_lazy(rsx! {
+        div { "hello world!" }
+        About {}
+        About {}
+        About {}
+    }))
 }
 
 async fn list_people(state: State<AppState>) -> Html<String> {
     let sql = "SELECT * FROM person";
-    let res = state
-        .db
-        .execute(sql, &state.session, None, false)
-        .await
-        .unwrap();
-    let people = into_iter_objects(res).unwrap();
+    let res: Vec<Person> = state.db.query(sql).await.unwrap().take(0).unwrap();
+
+    let people = res.into_iter();
 
     Html(dioxus_ssr::render_lazy(rsx! {
         div {
@@ -99,7 +102,7 @@ async fn list_people(state: State<AppState>) -> Html<String> {
             ul {
                 people.map(|person| rsx!(
                     li {
-                        p{ person.unwrap().get("name").unwrap().to_string()}
+                        p{ person.name}
                     }
                 ))
             }
