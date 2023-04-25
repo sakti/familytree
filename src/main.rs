@@ -1,16 +1,16 @@
 #![allow(non_snake_case)]
-use std::sync::Arc;
-
 use anyhow::Result;
 use axum::{extract::State, response::Html, routing::get, Router};
 use clap::Parser;
+use component::Wrapper;
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use surrealdb::engine::local::{Db, RocksDb};
 use surrealdb::Surreal;
-
 use tokio::signal;
 
+mod component;
 mod sample;
 
 const DB_PATH: &str = "family.db";
@@ -82,10 +82,10 @@ pub fn About(cx: Scope) -> Element {
 
 async fn debug() -> Html<String> {
     Html(dioxus_ssr::render_lazy(rsx! {
-        div { "hello world!" }
-        About {}
-        About {}
-        About {}
+        Wrapper {
+            div { "hello world!" }
+            About {}
+        }
     }))
 }
 
@@ -96,8 +96,11 @@ async fn list_people(state: State<AppState>) -> Html<String> {
     let people = res.into_iter();
 
     Html(dioxus_ssr::render_lazy(rsx! {
-        div {
-            h1 { "People" }
+        Wrapper{
+            h1 {
+                class: "text-3xl font-bold underline",
+                "People"
+            }
             p { "here list of people"}
             ul {
                 people.map(|person| rsx!(
@@ -113,7 +116,7 @@ async fn list_people(state: State<AppState>) -> Html<String> {
 async fn app_endpoint() -> Html<String> {
     // render the rsx! macro to HTML
     Html(dioxus_ssr::render_lazy(rsx! {
-        div { "hello world from SSR!, updated" }
+        Wrapper { "hello world from SSR!, updated" }
     }))
 }
 
