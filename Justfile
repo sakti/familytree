@@ -11,6 +11,8 @@ check:
 	cargo clippy
 	cargo fmt --all -- --check
 
-fix:
+fmt:
+    rustup run nightly -- rustfmt -v --edition 2021 ./src/main.rs
+
+fix: fmt
 	cargo clippy --fix --allow-staged --allow-dirty
-	cargo fmt

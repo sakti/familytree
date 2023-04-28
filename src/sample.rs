@@ -1,5 +1,7 @@
-use petgraph::{dot::Dot, Graph};
 use std::fmt;
+
+use petgraph::dot::Dot;
+use petgraph::Graph;
 
 #[derive(Debug, Copy, Clone)]
 struct Person<'a> {

@@ -1,11 +1,15 @@
 #![allow(non_snake_case)]
+use std::sync::Arc;
+
 use anyhow::Result;
-use axum::{extract::State, response::Html, routing::get, Router};
+use axum::extract::{Path, State};
+use axum::response::Html;
+use axum::routing::{get, post};
+use axum::Router;
 use clap::Parser;
 use component::Wrapper;
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use surrealdb::engine::local::{Db, RocksDb};
 use surrealdb::Surreal;
 use tokio::signal;
@@ -60,9 +64,10 @@ async fn main() -> Result<()> {
         .serve(
             Router::new()
                 .route("/", get(app_endpoint))
-                .route("/test", get(|| async { "hallo dunia" }))
-                .route("/test2", get(|| async { "hello world 2" }))
-                .route("/people", get(list_people))
+                .route("/person/new", get(|| async { "get create a new person" }))
+                .route("/person/new", post(|| async { "post create a new person" }))
+                .route("/person", get(list_person))
+                .route("/person/:id", get(get_person))
                 .route("/debug", get(debug))
                 .with_state(state)
                 .into_make_service(),
@@ -89,7 +94,18 @@ async fn debug() -> Html<String> {
     }))
 }
 
-async fn list_people(state: State<AppState>) -> Html<String> {
+async fn get_person(_state: State<AppState>, Path(id): Path<String>) -> Html<String> {
+    dbg!(id);
+    Html(dioxus_ssr::render_lazy(rsx! {
+        Wrapper{
+            h1 {
+                "Get person"
+            }
+        }
+    }))
+}
+
+async fn list_person(state: State<AppState>) -> Html<String> {
     let sql = "SELECT * FROM person";
     let res: Vec<Person> = state.db.query(sql).await.unwrap().take(0).unwrap();
 
