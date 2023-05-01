@@ -16,3 +16,9 @@ fmt:
 
 fix: fmt
 	cargo clippy --fix --allow-staged --allow-dirty
+
+meta:
+    nix flake metadata
+
+dockerize:
+    nix build .#dockerImage
