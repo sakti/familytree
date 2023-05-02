@@ -38,15 +38,18 @@
          # } else { 
          #     buildInputs = with pkgs;  [openssl];
          # };
+          depsBuildBuild = with pkgs; [ clang llvm ];
           buildInputs = with pkgs; [openssl (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security)];
 
           commonArgs = {
-            inherit src buildInputs nativeBuildInputs;
+            inherit src buildInputs nativeBuildInputs depsBuildBuild;
           };
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
           bin = craneLib.buildPackage (commonArgs // {
             inherit cargoArtifacts;
+
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
           });
           dockerImage = pkgs.dockerTools.streamLayeredImage {
             name = "familytree";
