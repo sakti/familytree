@@ -32,7 +32,14 @@
           src = craneLib.cleanCargoSource ./.;
 
           nativeBuildInputs = with pkgs; [ rustToolchain pkg-config ];
-          buildInputs = with pkgs; [ openssl darwin.apple_sdk.frameworks.Security ];
+
+         # if pkgs.stdenv.isDarwin then { 
+         #     buildInputs = with pkgs; [openssl darwin.apple_sdk.frameworks.Security];
+         # } else { 
+         #     buildInputs = with pkgs;  [openssl];
+         # };
+          buildInputs = with pkgs; [openssl (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security)];
+
           commonArgs = {
             inherit src buildInputs nativeBuildInputs;
           };
