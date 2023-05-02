@@ -43,13 +43,12 @@
 
           commonArgs = {
             inherit src buildInputs nativeBuildInputs depsBuildBuild;
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
           };
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
           bin = craneLib.buildPackage (commonArgs // {
             inherit cargoArtifacts;
-
-            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
           });
           dockerImage = pkgs.dockerTools.streamLayeredImage {
             name = "familytree";
@@ -64,14 +63,13 @@
         {
           packages =
             {
-			  # that way we can build `bin` specifically,
-			  # but it's also the default.
               inherit bin dockerImage;
               default = bin;
             };
           devShells.default = mkShell {
             inputsFrom = [ bin ];
-            buildInputs = with pkgs; [ dive ];
+            buildInputs = with pkgs; [ dive clang ];
+            LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
           };
         }
       );
