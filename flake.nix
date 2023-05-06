@@ -33,11 +33,6 @@
 
           nativeBuildInputs = with pkgs; [ rustToolchain pkg-config ];
 
-         # if pkgs.stdenv.isDarwin then { 
-         #     buildInputs = with pkgs; [openssl darwin.apple_sdk.frameworks.Security];
-         # } else { 
-         #     buildInputs = with pkgs;  [openssl];
-         # };
           depsBuildBuild = with pkgs; [ clang llvm ];
           buildInputs = with pkgs; [openssl (lib.optional stdenv.isDarwin darwin.apple_sdk.frameworks.Security)];
 
