@@ -50,6 +50,7 @@
             tag = "latest";
             contents = [ bin ];
             config = {
+              ExposedPorts = { "3000/tcp" = { };};
               Cmd = [ "${bin}/bin/familytree" ];
             };
           };
