@@ -68,6 +68,8 @@ async fn main() -> Result<()> {
                 .route("/person/new", post(|| async { "post create a new person" }))
                 .route("/person", get(list_person))
                 .route("/person/:id", get(get_person))
+                .route("/stats", get(stats))
+                .route("/settings", get(settings))
                 .route("/debug", get(debug))
                 .with_state(state)
                 .into_make_service(),
@@ -90,6 +92,22 @@ async fn debug() -> Html<String> {
         Wrapper {
             div { "hello world!" }
             About {}
+        }
+    }))
+}
+
+async fn stats() -> Html<String> {
+    Html(dioxus_ssr::render_lazy(rsx! {
+        Wrapper {
+            h1 { "Stats" }
+        }
+    }))
+}
+
+async fn settings() -> Html<String> {
+    Html(dioxus_ssr::render_lazy(rsx! {
+        Wrapper {
+            h1 { "Settings" }
         }
     }))
 }
