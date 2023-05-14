@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
-use dioxus_free_icons::{
-    icons::hi_outline_icons::{HiChartPie, HiCog, HiCubeTransparent, HiUser, HiDocumentSearch, HiBell},
-    Icon,
+use dioxus_free_icons::icons::hi_outline_icons::{
+    HiBell, HiChartPie, HiCog, HiCubeTransparent, HiDocumentSearch, HiUser,
 };
+use dioxus_free_icons::Icon;
 
 #[derive(Props)]
 pub struct WrapperProps<'a> {
