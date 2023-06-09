@@ -2,13 +2,16 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use axum::extract::{Path, State};
-use axum::response::Html;
+use axum::extract::{FromRef, Path, State};
+use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
 use axum::Router;
+use axum_template::engine::Engine;
+use axum_template::RenderHtml;
 use clap::Parser;
 use component::Wrapper;
 use dioxus::prelude::*;
+use minijinja::Environment;
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, RocksDb};
 use surrealdb::Surreal;
@@ -26,9 +29,12 @@ struct Args {
     dot: bool,
 }
 
-#[derive(Clone)]
+type AppEngine = Engine<Environment<'static>>;
+
+#[derive(Clone, FromRef)]
 struct AppState {
     db: Arc<Surreal<Db>>,
+    engine: AppEngine,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -55,7 +61,15 @@ async fn main() -> Result<()> {
     let res = db.query(sql).await?;
     println!("{res:?}");
 
-    let state = AppState { db: Arc::new(db) };
+    // setup template engine
+    let mut jinja = Environment::new();
+    jinja.add_template("layout.html", include_str!("templates/layout.html"))?;
+    jinja.add_template("home.html", include_str!("templates/home.html"))?;
+
+    let state = AppState {
+        db: Arc::new(db),
+        engine: Engine::from(jinja),
+    };
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on http://{addr}");
@@ -71,13 +85,25 @@ async fn main() -> Result<()> {
                 .route("/stats", get(stats))
                 .route("/settings", get(settings))
                 .route("/debug", get(debug))
+                .route("/test", get(test_template))
                 .with_state(state)
                 .into_make_service(),
         )
-        .with_graceful_shutdown(shutdown_signal())
+        // .with_graceful_shutdown(shutdown_signal())
         .await?;
 
     Ok(())
+}
+
+async fn test_template(engine: AppEngine) -> impl IntoResponse {
+    RenderHtml(
+        "home.html",
+        engine,
+        Person {
+            name: "Jon Snow".to_string(),
+            alive: true,
+        },
+    )
 }
 
 pub fn About(cx: Scope) -> Element {
@@ -154,6 +180,7 @@ async fn app_endpoint() -> Html<String> {
     }))
 }
 
+#[allow(dead_code)]
 async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()

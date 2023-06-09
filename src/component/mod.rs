@@ -4,6 +4,8 @@ use dioxus_free_icons::icons::hi_outline_icons::{
 };
 use dioxus_free_icons::Icon;
 
+// mod menu;
+
 #[derive(Props)]
 pub struct WrapperProps<'a> {
     children: Element<'a>,
